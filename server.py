@@ -21,8 +21,8 @@ class User:
         self.nickname: str = nickname
         self.socket: socket.socket = sock
 
-def broadcast(message: str):
-    logs.append(message)
+def broadcast(message: bytes):
+    logs.append(message.decode('ascii'))
     for client in clients:
         client.socket.send(message)
 
@@ -39,6 +39,10 @@ def handle(client: User):
                 break
             if dec_message == '/close_room':
                 broadcast('[sys]: closing the room'.encode('ascii'))
+                for c in clients:
+                    c.socket.send('s/disconnect'.encode('ascii'))
+                    c.socket.close()
+                server.close()
                 with open('logs.txt', 'r') as f:
                     old_logs = f.read()
                 with open('logs.txt', 'w') as f:
@@ -48,10 +52,6 @@ def handle(client: User):
                         f'{created_at}\n' +
                         '---------------------\n' +
                         '\n'.join(logs))
-                for c in clients:
-                    c.socket.send('s/disconnect'.encode('ascii'))
-                    c.socket.close()
-                server.close()
                 break
             broadcast(client.nickname.encode('ascii') + ': '.encode('ascii') + message)
         except:
