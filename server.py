@@ -1,6 +1,7 @@
 import threading
 import json
 import socket
+from datetime import datetime
 
 
 config = json.load(open('./config.json'))
@@ -11,7 +12,9 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind((host, port))
 server.listen()
 
+logs = []
 clients = []
+created_at = datetime.now()
 
 class User:
     def __init__(self, nickname, sock) -> None:
@@ -19,6 +22,7 @@ class User:
         self.socket: socket.socket = sock
 
 def broadcast(message: str):
+    logs.append(message)
     for client in clients:
         client.socket.send(message)
 
@@ -35,6 +39,15 @@ def handle(client: User):
                 break
             if dec_message == '/close_room':
                 broadcast('[sys]: closing the room'.encode('ascii'))
+                with open('logs.txt', 'r') as f:
+                    old_logs = f.read()
+                with open('logs.txt', 'w') as f:
+                    f.write(
+                        old_logs, '\n\n',
+                        '---------------------\n',
+                        f'{created_at}\n',
+                        '---------------------\n',
+                        '\n'.join(logs))
                 for c in clients:
                     c.socket.send('s/disconnect'.encode('ascii'))
                     c.socket.close()
@@ -61,9 +74,9 @@ def recieve():
             continue
         user = User(username, client)
         print(f'{addr} ({user.nickname}) has been added to the chat')
+        clients.append(user)
         broadcast(f'{user.nickname} joined the chat'.encode('ascii'))
         user.socket.send(f'Connected. Users: {", ".join([u.nickname for u in clients])}'.encode('ascii'))
-        clients.append(user)
 
         thread = threading.Thread(target=handle, args=(user,))
         thread.start()
