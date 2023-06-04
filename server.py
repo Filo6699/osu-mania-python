@@ -61,6 +61,7 @@ def handle(client: User):
             break
 
 def recieve():
+    print('Server started!')
     while True:
         client, addr = server.accept()
         print(f'{addr} has connected')
