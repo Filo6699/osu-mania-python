@@ -43,10 +43,10 @@ def handle(client: User):
                     old_logs = f.read()
                 with open('logs.txt', 'w') as f:
                     f.write(
-                        old_logs, '\n\n',
-                        '---------------------\n',
-                        f'{created_at}\n',
-                        '---------------------\n',
+                        old_logs + '\n\n' +
+                        '---------------------\n' +
+                        f'{created_at}\n' +
+                        '---------------------\n' +
                         '\n'.join(logs))
                 for c in clients:
                     c.socket.send('s/disconnect'.encode('ascii'))
