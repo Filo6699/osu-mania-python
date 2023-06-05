@@ -128,12 +128,12 @@ def get_username_loop():
     return username
 
 
-def handle_pockets(net: Network):
+def handle_pockets(player: OwnPlayer):
     while True:
-        data = net.client.recv(1024)
+        data = player.network.client.recv(1024)
         if not data:
             print('debugfggdgdfg')
-            net.client.close()
+            player.network.client.close()
             break
 
         try:
@@ -143,6 +143,9 @@ def handle_pockets(net: Network):
         
         t = data['type']
         
+        if t == 'player_id':
+            player.id = data['body']['id']
+
         if t == 'pos':
             for p in data['body']:
                 for sp in players:
@@ -171,11 +174,12 @@ if __name__ == "__main__":
     username = get_username_loop()
     net = Network(username, (host, port))
     try:
-        pid = net.connect()
+        pid = -1
+        net.connect()
         player = OwnPlayer(net, pid, username)
         players.append(player)
 
-        threading.Thread(target=handle_pockets, args=[net, ], daemon=True).start()
+        threading.Thread(target=handle_pockets, args=[player, ], daemon=True).start()
         # threading.Thread(target=send_pockets, args=[player, ], daemon=True).start()
 
         print('switching to main loop')

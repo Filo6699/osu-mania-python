@@ -18,7 +18,6 @@ class Network:
         try:
             self.client.connect(self.addr)
             self.client.sendall(self.name.encode())
-            return json.loads(self.client.recv(1024))
         except Exception as e:
             self.disconnect(e)
 
