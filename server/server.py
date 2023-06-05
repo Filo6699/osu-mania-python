@@ -29,25 +29,58 @@ def handle_pockets(player: Player):
             data = None
         if not data:
             players.remove(player)
+            for p in players:
+                pocket = {
+                    "type": "remove_player",
+                    "body": {
+                        "id": player.id
+                    }
+                }
+                p.socket.send(json.dumps(pocket).encode())
+
+                pocket = {
+                    "type": "chat_message",
+                    "body": {
+                        "message": player.username + " has left the game"
+                    }
+                }
+                p.socket.send(json.dumps(pocket).encode())
             player.socket.close()
             break
         try:
             data = json.loads(data.decode())
         except json.JSONDecodeError:
             continue
+        
+        t = data['type']
 
-        if data['type'] == 'pos':
+        if t == 'pos':
             player.pos = [
                 data['body']['x'],
                 data['body']['y'],
             ]
+        
+        if t == 'chat_message':
+            for p in players:
+                if p != player:
+                    data['body']['message'] = player.username + "> " + data['body']['message']
+                    p.socket.send(json.dumps(data).encode())
 
 def new_player(player: Player):
     pocket = {"type": "add_players", "body": []}
     pocket['body'].append({"id": player.id, "username": player.username, "pos": player.pos})
     bts = json.dumps(pocket).encode()
+
+    chat_pocket = {
+        "type": "chat_message",
+        "body": {
+            "message": player.username + " has joined the game"
+        }
+    }
+    bts2 = json.dumps(chat_pocket).encode()
     for p in players:
         p.socket.send(bts)
+        p.socket.send(bts2)
 
 
 def handle_connection():
@@ -64,6 +97,7 @@ def handle_connection():
             pocket = {"type": "add_players", "body": []}
             for p in players:
                 pocket['body'].append({"id": p.id, "username": p.username, "pos": p.pos})
+            print(pocket)
             conn.send(json.dumps(pocket).encode())
         
         player = Player(player_id, username, conn, [200, 200])
@@ -93,6 +127,9 @@ while True:
                     "x": sub_p.pos[0],
                     "y": sub_p.pos[1]
                 })
-            p.socket.send(json.dumps(data).encode())
+            try:
+                p.socket.send(json.dumps(data).encode())
+            except ConnectionError:
+                pass
             
     sleep(1 / tps)
