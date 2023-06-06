@@ -44,17 +44,17 @@ def remove_player(player: Player):
 def handle_pockets(player: Player):
     while True:
         try:
-            data = player.socket.recv(1024)
+            raw_data = player.socket.recv(1024)
         except Exception as err:
             if type(err) == ConnectionResetError:
-                data = None
+                raw_data = None
             elif type(err) == ConnectionAbortedError:
                 break
-        if not data:
+        if not raw_data:
             remove_player(player)
             break
         try:
-            data = json.loads(data.decode())
+            data = json.loads(raw_data.decode())
         except json.JSONDecodeError:
             continue
         
