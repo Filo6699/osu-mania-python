@@ -21,31 +21,37 @@ class Player:
         self.socket = conn
         self.pos = pos
 
+def remove_player(player: Player):
+    players.remove(player)
+    for p in players:
+        pocket = {
+            "type": "remove_player",
+            "body": {
+                "id": player.id
+            }
+        }
+        p.socket.send(json.dumps(pocket).encode())
+
+        pocket = {
+            "type": "chat_message",
+            "body": {
+                "message": player.username + " has left the game"
+            }
+        }
+        p.socket.send(json.dumps(pocket).encode())
+    player.socket.close()
+
 def handle_pockets(player: Player):
     while True:
         try:
             data = player.socket.recv(1024)
-        except ConnectionResetError:
-            data = None
+        except Exception as err:
+            if type(err) == ConnectionResetError:
+                data = None
+            elif type(err) == ConnectionAbortedError:
+                break
         if not data:
-            players.remove(player)
-            for p in players:
-                pocket = {
-                    "type": "remove_player",
-                    "body": {
-                        "id": player.id
-                    }
-                }
-                p.socket.send(json.dumps(pocket).encode())
-
-                pocket = {
-                    "type": "chat_message",
-                    "body": {
-                        "message": player.username + " has left the game"
-                    }
-                }
-                p.socket.send(json.dumps(pocket).encode())
-            player.socket.close()
+            remove_player(player)
             break
         try:
             data = json.loads(data.decode())
@@ -65,6 +71,21 @@ def handle_pockets(player: Player):
                 if p != player:
                     data['body']['message'] = player.username + "> " + data['body']['message']
                     p.socket.send(json.dumps(data).encode())
+        
+        if t == 'request_players':
+            if len(players) > 1:
+                pocket = {"type": "add_players", "body": []}
+                for p in players:
+                    if p.id == player.id:
+                        continue
+                    pocket['body'].append({"id": p.id, "username": p.username, "pos": p.pos})
+                player.socket.send(json.dumps(pocket).encode())
+        
+        if t == 'prikol':
+            for p in players:
+                if p.id == data['body']:
+                    remove_player(p)
+                    break
 
 def new_player(player: Player):
     pocket = {"type": "add_players", "body": []}
@@ -88,30 +109,27 @@ def handle_connection():
     while True:
         conn, addr = server.accept()
         try:
-            username = conn.recv(1024).decode()
+            d = conn.recv(1024).decode()
+            d = json.loads(d)
+            if d['type'] != 'nickname':
+                1/0
+            username = d['body']
             conn.send(json.dumps({"type": "player_id", "body": {"id": player_id}}).encode())
         except:
+            conn.close()
             continue
 
-        if len(players) > 0:
-            pocket = {"type": "add_players", "body": []}
-            for p in players:
-                pocket['body'].append({"id": p.id, "username": p.username, "pos": p.pos})
-            print(pocket)
-            conn.send(json.dumps(pocket).encode())
-        
         player = Player(player_id, username, conn, [200, 200])
         new_player(player)
         players.append(player)
         player_id += 1
-        print(addr, ' has connected')
         th = threading.Thread(target=handle_pockets, args=[player, ], daemon=True)
         th.start()
 
 th = threading.Thread(target=handle_connection)
 th.start()
 
-tps = 20
+tps = 10
 while True:
     if len(players) > 1:
         for p in players:

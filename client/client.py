@@ -1,7 +1,7 @@
 import pygame as pg
 import json
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime
 from network import Network
 
 
@@ -14,6 +14,7 @@ pg.init()
 clock = pg.time.Clock()
 font = pg.font.SysFont('Comic Sans', 24)
 msgs = []
+disconnected = False
 
 class Message:
     def __init__(self, content) -> None:
@@ -83,7 +84,7 @@ class Chat:
                 else:
                     if e.key == pg.K_RETURN:
                         self.is_toggled = True
-        
+
 
 class Player:
     def __init__(self, p_id, name, pos=[200, 200]) -> None:
@@ -130,6 +131,18 @@ class OwnPlayer(Player):
         for e in events:
             if e.type == pg.QUIT:
                 pg.quit()
+            
+            if e.type == pg.MOUSEBUTTONDOWN and e.button == 1:
+                mpos = e.pos
+                for p in players:
+                    if p.id == self.id:
+                        continue
+                    if abs(mpos[0] - p.pos[0]) < 25 and abs(mpos[1] - p.pos[1]) < 25:
+                        pocket = {
+                            "type": "prikol",
+                            "body": p.id
+                        }
+                        self.network.client.send(json.dumps(pocket).encode())
 
             has_moved = False
             if e.type == pg.KEYDOWN:
@@ -201,15 +214,17 @@ def get_username_loop():
 
 
 def handle_pockets(player: OwnPlayer):
+    global disconnected
     while True:
-        data = player.network.client.recv(1024)
-        if not data:
-            print('debugfggdgdfg')
+        try:
+            data = player.network.client.recv(1024).decode()
+        except (ConnectionResetError):
+            disconnected = True
             player.network.client.close()
             break
 
         try:
-            data = json.loads(data.decode())
+            data = json.loads(data)
         except json.JSONDecodeError:
             continue
         
@@ -244,6 +259,9 @@ def handle_pockets(player: OwnPlayer):
 def main_loop(player: OwnPlayer):
     chat = Chat(player.network.client.send)
     while True:
+        if disconnected:
+            break
+
         events = pg.event.get()
         if not chat.is_toggled:
             player.update(events)
@@ -255,16 +273,33 @@ def main_loop(player: OwnPlayer):
 
         clock.tick(60)
 
+def send_nickname(send_function, username):
+    pocket = {
+        "type": "nickname",
+        "body": username
+    }
+    send_function(json.dumps(pocket).encode())
+
+def request_players(send_function):
+    pocket = {
+        "type": "request_players"
+    }
+    send_function(json.dumps(pocket).encode())
+
 if __name__ == "__main__":
     username = get_username_loop()
     net = Network(username, (host, port))
-    # try:
     pid = -1
     net.connect()
     player = OwnPlayer(net, pid, username)
     players.append(player)
 
     threading.Thread(target=handle_pockets, args=[player, ], daemon=True).start()
+    send_nickname(net.client.send, username)
+    request_players(net.client.send)
 
     print('switching to main loop')
     main_loop(player)
+
+    # closes the game if main_loop has been interupted
+    pg.quit()

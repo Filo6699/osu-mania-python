@@ -17,7 +17,6 @@ class Network:
     def connect(self):
         try:
             self.client.connect(self.addr)
-            self.client.sendall(self.name.encode())
         except Exception as e:
             self.disconnect(e)
 
@@ -26,22 +25,6 @@ class Network:
             self.client.send(json.dumps(data).encode())
             
             d = self.client.recv(1024).decode()
-
-            # d = ""
-            # while 1:
-            #     last = self.client.recv(1024).decode()
-            #     d += last
-            #     try:
-            #         if d.count(".") == 1:
-            #             break
-            #     except:
-            #         pass
-
-            # try:
-            #     if d[-1] == ".":
-            #         d = d[:-1]
-            # except:
-            #     pass
 
             keys = [key for key in data.keys()]
             return json.loads(d)[str(keys[0])]
