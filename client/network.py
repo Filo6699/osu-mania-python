@@ -2,9 +2,7 @@ import socket
 import json
 import threading
 from time import sleep
-from pockets import (
-    Pocket,
-)
+from client.pockets import Pocket
 
 
 class UnknownLoopBreak(Exception):

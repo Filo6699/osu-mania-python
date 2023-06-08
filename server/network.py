@@ -1,10 +1,11 @@
 import socket
 import json
 import threading
-from pockets import Pocket, NO_TOKEN_POCKETS
+from pockets import NO_TOKEN_POCKETS
+from server.pockets import Pocket
 from server.user import User
 
-fes = 0
+
 class Server:
     def __init__(self) -> None:
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -23,11 +24,8 @@ class Server:
             conn, _ = self.server.accept()
             user = User(conn)
             self.connections.append(user)
-            if fes < 10:
-                th = threading.Thread(target=self.handle_pockets_loop, args=[user, ])
-                th.start()
-            else:
-                break
+            th = threading.Thread(target=self.handle_pockets_loop, args=[user, ])
+            th.start()
             self.next_diid += 1
     
     def start(self, address):
@@ -64,7 +62,7 @@ class Server:
 
             for l in self.listeners:
                 if l[1] == ptype:
-                    threading.Thread(target=l[0], args=[user, data, ], daemon=True).start()
+                    threading.Thread(target=l[0], args=[user, data, ]).start()
                     l[2] -= 1
                     if l[2] == 0:
                         self.listeners.remove(l)
