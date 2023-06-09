@@ -24,8 +24,8 @@
 
 # How to use
 ## Installation
-* `git clone https://github.com/Filo6699/chatroom`
-* `cd chatroom`
+* `git clone https://github.com/Filo6699/osu-mania-python`
+* `cd osu-mania-python`
 * `python -m pip install -r requirements.txt`
 ### Create a config.json file in project's root folder
 ```
