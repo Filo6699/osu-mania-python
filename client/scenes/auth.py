@@ -46,7 +46,7 @@ class Auth(Scene):
             return
 
         if not self.net.send(LoginPocket(login.text, pwd.text)):
-            ...
+            self.warning.text = "Wasn't able to connect to the server"
     
     def send_data(self, data: dict):
         if data['correct'] == False:

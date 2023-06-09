@@ -55,7 +55,8 @@ class Register(Scene):
                 self.warning.text = piece + " must be 4-20 characters"
                 return
         
-        self.net.send(RegisterPocket(self.login.text, self.username.text, self.password.text))
+        if not self.net.send(RegisterPocket(self.login.text, self.username.text, self.password.text)):
+            self.warning.text = "Wasn't able to connect to the server"
 
     def draw(self) -> None:
         scr = self.screen

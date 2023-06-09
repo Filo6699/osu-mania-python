@@ -1,7 +1,6 @@
 import pygame as pg
 import threading
 from client.scenes import SCENES
-# from client.auth_old import AuthWindow
 from client.network import Network
 
 

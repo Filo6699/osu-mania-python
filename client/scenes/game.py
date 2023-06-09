@@ -76,12 +76,12 @@ class GameScene(Scene):
             ]
             combo = self.leaderboard_font.render("x" + str(u['combo']), 1, (255, 255, 255))
             c_pos = [
-                140 - combo.get_width(),
+                170 - combo.get_width(),
                 yoffset + 34
             ]
 
             draw.rect(src, (10, 10, 60), [
-                1, yoffset, 150, 70
+                1, yoffset, 180, 70
             ])
             src.blit(username, u_pos)
             src.blit(score, s_pos)

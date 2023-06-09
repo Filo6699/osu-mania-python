@@ -1,3 +1,4 @@
+import json
 from server.network import Server
 from server.game import Game
 from server.db import users_db
@@ -50,8 +51,9 @@ def on_game_state_update(user: User, pocket: dict):
 
 
 if __name__ == "__main__":
-    host = "localhost"
-    port = 6699
+    config = json.load(open('./config.json'))
+    host = config['host']
+    port = config['port']
 
     server = Server()
     game = Game()
