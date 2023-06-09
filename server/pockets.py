@@ -41,3 +41,32 @@ class WrongAuthDetails(Pocket):
             }
         }
         super().__init__(data)
+
+class GameScore(Pocket):
+    def __init__(self, state) -> None:
+        data = {
+            "type": "game_state",
+            "body": [
+                {
+                    "username": state["username"],
+                    "score": state["score"],
+                    "combo": state["combo"],
+                }
+            ]
+        }
+        super().__init__(data)
+
+class GameScores(Pocket):
+    def __init__(self, players) -> None:
+        data = {
+            "type": "game_state",
+            "body": []
+        }
+        for u in players:
+            udata = {
+                "username": u['username'],
+                "score": u['score'],
+                "combo": u['combo'],
+            }
+            data['body'].append(udata)
+        super().__init__(data)

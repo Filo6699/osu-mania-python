@@ -20,7 +20,7 @@ class Pocket:
         connection.send(json.dumps(data).encode())
 
 class LoginPocket(Pocket):
-    def __init__(self, login, password) -> None:
+    def __init__(self, login, password, attributes: dict = {}) -> None:
         body = {
             "login": login,
             "password": password
@@ -28,10 +28,14 @@ class LoginPocket(Pocket):
         super().__init__("auth", body)
 
 class RegisterPocket(Pocket):
-    def __init__(self, login, username, password) -> None:
+    def __init__(self, login, username, password, attributes: dict = {}) -> None:
         body = {
             "login": login,
             "username": username,
             "password": password
         }
         super().__init__("register", body)
+
+class GameStatePocket(Pocket):
+    def __init__(self, game_state: dict, attributes: dict = {}) -> None:
+        super().__init__("game_state", game_state, attributes)

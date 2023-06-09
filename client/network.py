@@ -25,6 +25,7 @@ class Network:
         self.disconnected = True
         self.failed_connections = 0
         self.attributes = attributes
+        self.auth_data = None
     
     def add_listener(self, function, pocket_type: str | Pocket, use_count: int=-1):
         if isinstance(pocket_type, Pocket):
@@ -65,12 +66,10 @@ class Network:
                     self.disconnect(err)
                     break
                 if t == json.JSONDecodeError:
-                    print('js')
                     continue
                 raise err
             
             ptype = data['type']
-            print(data, self.listeners)
             for l in self.listeners:
                 if l[1] == ptype:
                     threading.Thread(target=l[0], args=[data, ]).start()

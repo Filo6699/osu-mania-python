@@ -10,7 +10,7 @@ port = 6699
 def run():
     pg.init()
     load_fonts()
-    screen = pg.display.set_mode((700, 700))
+    screen = pg.display.set_mode((1200, 700))
     game = Game(screen)
     game.run((host, port))
 

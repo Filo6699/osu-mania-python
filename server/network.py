@@ -46,7 +46,6 @@ class Server:
                     self.disconnect(user)
                     break
                 if t == json.JSONDecodeError:
-                    print('js')
                     continue
                 raise err
             

@@ -6,7 +6,7 @@ class User:
         self.conn = conn
         self.id = -1
         self.auth_token = None
-        self.game_state = {}
+        self.username = None
 
     def send(self, pocket):
         pocket.send(self.conn)
