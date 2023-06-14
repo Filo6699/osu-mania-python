@@ -3,7 +3,8 @@ from server.network import Server
 from server.game import Game
 from server.db import users_db
 from server.user import User
-from server.pockets import WrongAuthDetails, UserInfo, GameScore, GameScores
+from server.pockets import WrongAuthDetails, UserInfo, GameScore, ChatMessage, ChatMessages, LobbyJoin, LobbyInfo
+from datetime import datetime
 
 
 def on_login(user: User, pocket: dict):
@@ -15,7 +16,18 @@ def on_login(user: User, pocket: dict):
                 user.auth_token = data["token"]
                 user.id = id
                 user.username = data["username"]
+                user.play_count = data['play_count']
                 user.send(UserInfo(id, data))
+                u = {
+                    "username": user.username,
+                    "play_count": user.play_count,
+                    "score": 0,
+                    "combo": 0,
+                    "conn": user
+                }
+                for us in game.players:
+                    us['conn'].send(LobbyJoin(user))
+                game.players.append(u)
                 break
             else:
                 user.send(WrongAuthDetails())
@@ -34,6 +46,7 @@ def on_game_state_update(user: User, pocket: dict):
     except ZeroDivisionError:
         u = {
             "username": user.username,
+            "play_count": user.play_count,
             "score": pocket['body']['score'],
             "combo": pocket['body']['combo'],
             "conn": user
@@ -44,10 +57,32 @@ def on_game_state_update(user: User, pocket: dict):
     for p in game.players:
         if p['username'] == user.username:
             continue
-        try:
-            p['conn'].send(GameScore(u))
-        except OSError:
-            game.players.remove(p)
+        p['conn'].send(GameScore(u))
+
+def on_msg(user: User, pocket: dict):
+    n = datetime.now()
+    hh = n.hour
+    mm = n.minute
+    ss = n.second
+    msg = f"[{hh:2}:{mm:2}:{ss:2}] {user.username}> {pocket['body']}"
+    poc = ChatMessage(msg)
+    game.chat_msgs.append(msg)
+    for p in game.players:
+        p['conn'].send(poc)
+
+def udisc(user):
+    try:
+        for u in game.players:
+            if u["username"] == user.username:
+                game.players.remove(u)
+    except ValueError:
+        pass
+
+def fetch_chat_req(user: User, _):
+    user.send(ChatMessages(game.chat_msgs[-7:]))
+def fetch_lobby(user: User, _):
+    print(LobbyInfo([u['conn'] for u in game.players]).data)
+    user.send(LobbyInfo([u['conn'] for u in game.players]))
 
 
 if __name__ == "__main__":
@@ -55,8 +90,11 @@ if __name__ == "__main__":
     host = config['host']
     port = config['port']
 
-    server = Server()
+    server = Server(udisc)
     game = Game()
     server.start((host, port))
     server.add_listener(on_login, "auth")
     server.add_listener(on_game_state_update, "game_state")
+    server.add_listener(on_msg, "chat_message")
+    server.add_listener(fetch_chat_req, "fetch_chat")
+    server.add_listener(fetch_lobby, "lobby_fetch")

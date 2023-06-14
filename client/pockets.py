@@ -39,3 +39,15 @@ class RegisterPocket(Pocket):
 class GameStatePocket(Pocket):
     def __init__(self, game_state: dict, attributes: dict = {}) -> None:
         super().__init__("game_state", game_state, attributes)
+
+class ChatMessage(Pocket):
+    def __init__(self, message, attributes: dict = {}) -> None:
+        super().__init__("chat_message", message, attributes)
+
+class FetchChat(Pocket):
+    def __init__(self, attributes: dict = {}) -> None:
+        super().__init__("fetch_chat", None, attributes)
+
+class FetchLobby(Pocket):
+    def __init__(self, attributes: dict = {}) -> None:
+        super().__init__("lobby_fetch", None, attributes)

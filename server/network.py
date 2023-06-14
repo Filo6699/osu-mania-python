@@ -7,12 +7,13 @@ from server.user import User
 
 
 class Server:
-    def __init__(self) -> None:
+    def __init__(self, udisc) -> None:
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.address = None
         self.listeners = []
         self.connections = []
         self.next_diid = 0
+        self.udisc = udisc
     
     def add_listener(self, function, pocket_type: str | Pocket, use_count: int=-1):
         if isinstance(pocket_type, Pocket):
@@ -67,4 +68,5 @@ class Server:
                         self.listeners.remove(l)
     
     def disconnect(self, user: User):
+        self.udisc(user)
         user.conn.close()

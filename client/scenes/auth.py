@@ -25,8 +25,8 @@ class Auth(Scene):
         button.on_click = self.register_click
         self.form.add_component(button)
 
-        self.warning = Label("", [300, 0], "warning", [100, 100])
-        self.warning.color = (255, 50, 50)
+        self.warning = Label("", [300, 0], "warning", [self.form.sizes[0] / 2, 90])
+        self.warning.color = (255, 0, 0)
         self.form.add_component(self.warning)
 
     def login_click(self):

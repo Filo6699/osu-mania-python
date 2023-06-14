@@ -70,3 +70,53 @@ class GameScores(Pocket):
             }
             data['body'].append(udata)
         super().__init__(data)
+
+class ChatMessage(Pocket):
+    def __init__(self, message) -> None:
+        data = {
+            "type": "chat_message",
+            "body": message
+        }
+        super().__init__(data)
+
+class ChatMessages(Pocket):
+    def __init__(self, msgs: list) -> None:
+        data = {
+            "type": "fetch_chat",
+            "body": msgs
+        }
+        super().__init__(data)
+
+class LobbyJoin(Pocket):
+    def __init__(self, user: User) -> None:
+        data = {
+            "type": "lobby_player_join",
+            "body": {
+                "username": user.username,
+                "play_count": user.play_count
+            }
+        }
+        super().__init__(data)
+
+class LobbyLeave(Pocket):
+    def __init__(self, user: User) -> None:
+        data = {
+            "type": "lobby_player_leave",
+            "body": {
+                "username": user.username
+            }
+        }
+        super().__init__(data)
+
+class LobbyInfo(Pocket):
+    def __init__(self, users: list) -> None:
+        data = {
+            "type": "lobby_fetch",
+            "body": []
+        }
+        for u in users:
+            data['body'].append({
+                'username': u.username,
+                'play_count': u.play_count
+            })
+        super().__init__(data)

@@ -1,18 +1,51 @@
-from pygame import Surface, draw, KEYDOWN, MOUSEBUTTONDOWN, MOUSEBUTTONUP, key, SRCALPHA
+from pygame import Surface, draw, KEYDOWN, MOUSEBUTTONDOWN, MOUSEBUTTONUP, SRCALPHA, MOUSEMOTION
 from pygame.font import Font
 
 
 def load_fonts() -> None:
     fsize = 36
+    default_font = Font(None, fsize)
     TextEdit.font_size = fsize * (4/3)
-    TextEdit.input_font = Font(None, fsize)
+    TextEdit.input_font = default_font
     TextEdit.error_font = Font(None, fsize)
     TextEdit.error_font.set_underline(1)
 
-    Button.label_font = Font(None, fsize)
+    Button.label_font = default_font
     # fsize = 30
-    Button.label_font.set_bold(1)
-    Label.label_font = Font(None, fsize)
+    Label.label_font = default_font
+
+    fsize = 27
+    Map.hover_font = Font(None, fsize)
+
+    Slot.font = default_font
+
+
+def render_hover_info(text: str, font: Font) -> Surface:
+    lines = text.split("\n")
+    rendered = []
+    max_len = [0, 0]
+    height = 0
+    for l in lines:
+        r = font.render(l, 1, (222, 222, 222))
+        rendered.append(r)
+        sz = r.get_size()
+        height += sz[1]
+        max_len = [
+            max(max_len[0], sz[0]),
+            max(max_len[1], sz[1]),
+        ]
+    margin_y = 0
+    sur = Surface((
+        max_len[0] + 10,
+        margin_y * (len(rendered) - 1) + height + 10
+    ), flags=SRCALPHA)
+    draw.rect(sur, (13, 13, 13), (0, 0, *sur.get_size()), border_radius=8)
+    draw.rect(sur, (222, 222, 222), (0, 0, *sur.get_size()), 1, border_radius=8)
+    offset_y = 0
+    for ind, lin in enumerate(rendered):
+        sur.blit(lin, (5, 5 + ind * margin_y + offset_y))
+        offset_y += lin.get_height()
+    return sur
 
 
 class Scene:
@@ -29,6 +62,7 @@ class Component:
         self.sizes = sizes
         self.hidden = is_hidden
         self.focus = False
+        self.hover_pos = False
         self.pos = position
         self.name = name
     
@@ -43,10 +77,12 @@ class Button(Component):
     def __init__(self, label: str, sizes, name: str, position: list = [0, 0], is_hidden=False) -> None:
         super().__init__(sizes, name, position, is_hidden)
         self.label = label
-        self.color = (200, 200, 215)
+        self.color = (15, 15, 15)
         self.is_pressed = False
-        self.pressed_color = (170, 170, 185)
-        self.border_radius = 13
+        self.pressed_color = (43, 43, 43)
+        self.border_radius = 10
+        self.outline_color = (255, 255, 255)
+        self.outline_width = 1
     
     def on_click(self): ...
     def on_unclick(self): ...
@@ -65,6 +101,7 @@ class Button(Component):
         else:
             color = self.color
         draw.rect(surface, color, (*self.pos, *self.sizes), border_radius=self.border_radius)
+        draw.rect(surface, self.outline_color, (*self.pos, *self.sizes), width=self.outline_width, border_radius=self.border_radius)
 
         clr = [
             255 - color[0],
@@ -92,12 +129,14 @@ class TextEdit(Component):
         self.text = ""
         self.margin = (self.sizes[1] - self.font_size / 2) / 2
         self.ghost_text = ghost_text
-        self.color = (80, 80, 100)
-        self.error_color = (140, 80, 100)
+        self.color = (80, 80, 80)
+        self.error_color = (140, 80, 80)
         self.error = False
         self.border_radius = 5
         self.symbol_limit = 20
         self.password_style = False
+    
+    def enter_pressed(self): ...
     
     def set_focus(self):
         self.focus = True
@@ -107,6 +146,8 @@ class TextEdit(Component):
         if key == b'\x08'.decode():
             if len(self.text) > 0:
                 self.text = self.text[:-1]
+        elif key == b'\r'.decode():
+            self.enter_pressed()
         elif key == "space":
             self.text += " "
         elif not key.isprintable():
@@ -115,7 +156,7 @@ class TextEdit(Component):
             self.text += key
 
         if len(self.text) >= self.symbol_limit:
-            self.text = self.text[:20]
+            self.text = self.text[:self.symbol_limit]
     
     def draw(self, surface: Surface):
         if self.error:
@@ -165,26 +206,83 @@ class Label(Component):
         self.is_centered = True
     
     def draw(self, surface: Surface):
-        rend = self.label_font.render(self.text, 1, self.color)
-        if self.is_centered:
-            font_pos = [
-                self.pos[0] + self.sizes[0] / 2 - rend.get_width() / 2,
-                self.pos[1] + self.sizes[1] / 2 - rend.get_height() / 2,
-            ]
-        else:
-            font_pos = self.pos
-        surface.blit(rend, font_pos)
+        renders = []
+        max_len = 0
+        for line in self.text.split("\n"):
+            r = self.label_font.render(line, 1, self.color)
+            renders.append(r)
+            max_len = max(max_len, r.get_width())
+        offsety = 0
+        for line in renders:
+            if self.is_centered:
+                pos = [
+                    self.pos[0] - line.get_width() / 2,
+                    self.pos[1] + offsety
+                ]
+            else:
+                pos = [self.pos[0], self.pos[1] + offsety]
+            surface.blit(line, pos)
+            offsety += line.get_height() + 2
         
+
+class Map(Component):
+    hover_font: Font = None
+
+    def __init__(self, sizes, name: str, position: list = [0, 0], is_hidden=False) -> None:
+        super().__init__(sizes, name, position, is_hidden)
+        # self.map_info
+        self.hover_text = "info\nfewfewfweff\n\n\nf"
+    
+    def draw(self, surface: Surface):
+        if self.hover_pos:
+            surface.blit(render_hover_info(self.hover_text, self.hover_font), self.hover_pos)
+
+
+class Slot(Component):
+    font: Font = None
+
+    def __init__(self, username, pl_count, sizes, name: str, position: list = [0, 0], is_hidden=False) -> None:
+        super().__init__(sizes, name, position, is_hidden)
+        self.username = username
+        self.play_count = pl_count
+        self.render = None
+        self.update_render()
+    
+    def update_render(self) -> None:
+        sr = Surface(self.sizes, flags=SRCALPHA)
+        draw.rect(sr, (70, 70, 70, 100), (0, 0, *self.sizes))
+        if self.username:
+            usn = self.font.render(self.username, 1, (255, 255, 255))
+            pl = self.font.render(str(self.play_count), 1, (255, 255, 255))
+            usn_pos = [
+                8,
+                self.sizes[1] / 2 - usn.get_height() / 2
+            ]
+            pl_pos = [
+                self.sizes[0] - 8 - pl.get_width(),
+                self.sizes[1] / 2 - pl.get_height() / 2
+            ]
+            sr.blit(usn, usn_pos)
+            sr.blit(pl, pl_pos)
+        self.render = sr
+
+    def draw(self, surf: Surface):
+        ren = self.render.copy()
+        if self.hover_pos:
+            ren.fill((200, 200, 200), special_flags=3)
+        surf.blit(ren, self.pos)
+
 
 class Form:
     def __init__(self, sizes=(500, 500), offset=(0, 0)) -> None:
         self.sizes = sizes
         self.offset = offset
-        self.bg_color = (125, 125, 145)
+        self.bg_color = (25, 25, 25)
         self.components = []
         self.focus = None
         self.border_radius = 25
         self.last_clicked = None
+        self.border_color = (255, 255, 255)
     
     def add_component(self, component: Component):
         self.components.append(component)
@@ -193,11 +291,13 @@ class Form:
         for c in self.components:
             if c.name == name:
                 return c
+        return None
     
     def render(self) -> Surface:
         out = Surface(self.sizes, SRCALPHA)
         out.fill((255, 255, 255, 0))
         draw.rect(out, self.bg_color, (0, 0, *self.sizes), border_radius=self.border_radius)
+        draw.rect(out, self.border_color, (0, 0, *self.sizes), 2, border_radius=self.border_radius)
         for comp in self.components:
             comp.draw(out)
         return out
@@ -241,3 +341,15 @@ class Form:
                     self.last_clicked.unclick(e.pos)
                 except AttributeError:
                     continue
+            if e.type == MOUSEMOTION:
+                e.pos = [
+                    e.pos[0] - self.offset[0],
+                    e.pos[1] - self.offset[1],
+                ]
+                for comp in self.components:
+                    xdi = e.pos[0] - comp.pos[0]
+                    ydi = e.pos[1] - comp.pos[1]
+                    if xdi > 0 and xdi < comp.sizes[0] and ydi > 0 and ydi < comp.sizes[1]:
+                        comp.hover_pos = e.pos
+                    else:
+                        comp.hover_pos = None

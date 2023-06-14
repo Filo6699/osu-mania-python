@@ -29,7 +29,7 @@ class Register(Scene):
         button.on_click = self.back_click
         self.form.add_component(button)
 
-        self.warning = Label("", [300, 0], "warning", [100, 100])
+        self.warning = Label("", [300, 0], "warning", [self.form.sizes[0] / 2, 80])
         self.warning.color = (255, 50, 50)
         self.form.add_component(self.warning)
     
