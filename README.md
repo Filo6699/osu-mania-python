@@ -31,7 +31,7 @@
 ```
 {
   "host": "host.ip.here.thx",
-  "port": port (as number)
+  "port": 42069
 }
 ```
 

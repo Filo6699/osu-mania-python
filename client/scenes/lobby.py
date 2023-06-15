@@ -15,7 +15,7 @@ class Lobby(Scene):
         self.form.border_radius = 0
         self.form.border_color = (0, 0, 0, 0)
         for i in range(5):
-            self.form.add_component(Slot("", -1, (500, 70), "us" + str(i), position=[20, 20 + 80 * i]))
+            self.form.add_component(Slot("", -1, (500, 70), "us" + str(i + 1), position=[20, 20 + 80 * i]))
         self.players = 0
         
         self.net.add_listener(self.new_player, "lobby_join")
@@ -49,19 +49,14 @@ class Lobby(Scene):
             
             pocket = self.net.fetch(FetchLobby())
             if pocket:
-                for i in range(5):
-                    slot = self.form.get_comp_by_name("us" + str(i))
-                    slot.username = ""
-                    slot.update_render()
-
-                for i, user in enumerate(pocket['body']):
-                    slot = self.form.get_comp_by_name("us" + str(i))
-                    try:
-                        slot.username = user['username']
-                        slot.play_count = user['play_count']
-                        slot.update_render()
-                    except (KeyError, IndexError):
+                for ind, info in pocket['body'].items():
+                    slot = self.form.get_comp_by_name("us" + ind)
+                    if info:
+                        slot.username = info['username']
+                        slot.play_count = info['play_count']
+                    else:
                         slot.username = ""
+                    slot.update_render()
 
             sleep(20)
     

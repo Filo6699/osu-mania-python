@@ -3,7 +3,16 @@ from server.network import Server
 from server.game import Game
 from server.db import users_db
 from server.user import User
-from server.pockets import WrongAuthDetails, UserInfo, GameScore, ChatMessage, ChatMessages, LobbyJoin, LobbyInfo
+from server.pockets import (
+    WrongAuthDetails, 
+    UserInfo, 
+    GameScore, 
+    ChatMessage, 
+    ChatMessages, 
+    LobbyJoin, 
+    LobbyLeave,
+    LobbyInfo,
+)
 from datetime import datetime
 
 
@@ -28,6 +37,7 @@ def on_login(user: User, pocket: dict):
                 for us in game.players:
                     us['conn'].send(LobbyJoin(user))
                 game.players.append(u)
+                game.add_player(user)
                 break
             else:
                 user.send(WrongAuthDetails())
@@ -75,14 +85,17 @@ def udisc(user):
         for u in game.players:
             if u["username"] == user.username:
                 game.players.remove(u)
+                game.remove_player(user)
+                for us in game.players:
+                    us['conn'].send(LobbyLeave(user))
     except ValueError:
         pass
 
 def fetch_chat_req(user: User, _):
     user.send(ChatMessages(game.chat_msgs[-7:]))
+
 def fetch_lobby(user: User, _):
-    print(LobbyInfo([u['conn'] for u in game.players]).data)
-    user.send(LobbyInfo([u['conn'] for u in game.players]))
+    user.send(LobbyInfo(game.slots))
 
 
 if __name__ == "__main__":

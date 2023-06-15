@@ -109,14 +109,9 @@ class LobbyLeave(Pocket):
         super().__init__(data)
 
 class LobbyInfo(Pocket):
-    def __init__(self, users: list) -> None:
+    def __init__(self, users: dict) -> None:
         data = {
             "type": "lobby_fetch",
-            "body": []
+            "body": users
         }
-        for u in users:
-            data['body'].append({
-                'username': u.username,
-                'play_count': u.play_count
-            })
         super().__init__(data)
