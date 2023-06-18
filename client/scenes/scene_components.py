@@ -83,6 +83,7 @@ class Button(Component):
         self.border_radius = 10
         self.outline_color = (255, 255, 255)
         self.outline_width = 1
+        self.font_color = None
     
     def on_click(self): ...
     def on_unclick(self): ...
@@ -103,17 +104,36 @@ class Button(Component):
         draw.rect(surface, color, (*self.pos, *self.sizes), border_radius=self.border_radius)
         draw.rect(surface, self.outline_color, (*self.pos, *self.sizes), width=self.outline_width, border_radius=self.border_radius)
 
-        clr = [
-            255 - color[0],
-            255 - color[1],
-            255 - color[2],
-        ]
-        rnd = self.label_font.render(self.label, 1, clr)
-        pos = [
-            self.pos[0] + self.sizes[0] / 2 - rnd.get_width() / 2,
-            self.pos[1] + self.sizes[1] / 2 - rnd.get_height() / 2,
-        ]
-        surface.blit(rnd, pos)
+        if not self.font_color:
+            clr = [
+                255 - color[0],
+                255 - color[1],
+                255 - color[2],
+            ]
+        else:
+            clr = self.font_color
+        renders = []
+        max_len = 0
+        height = 0
+        for line in self.label.split("\n"):
+            r = self.label_font.render(line, 1, clr)
+            renders.append(r)
+            max_len = max(max_len, r.get_width())
+            height += r.get_height()
+        offsety = 0
+        for line in renders:
+            pos = [
+                self.pos[0] + self.sizes[0] / 2 - line.get_width() / 2,
+                self.pos[1] + self.sizes[1] / 2 - height / 2 + offsety
+            ]
+            surface.blit(line, pos)
+            offsety += line.get_height() + 2
+        # rnd = self.label_font.render(self.label, 1, clr)
+        # pos = [
+        #     self.pos[0] + self.sizes[0] / 2 - rnd.get_width() / 2,
+        #     self.pos[1] + self.sizes[1] / 2 - rnd.get_height() / 2,
+        # ]
+        # surface.blit(rnd, pos)
 
 class TextEdit(Component):
     input_font: Font = None
@@ -223,17 +243,20 @@ class Label(Component):
                 pos = [self.pos[0], self.pos[1] + offsety]
             surface.blit(line, pos)
             offsety += line.get_height() + 2
-        
+
 
 class Map(Component):
     hover_font: Font = None
 
     def __init__(self, sizes, name: str, position: list = [0, 0], is_hidden=False) -> None:
         super().__init__(sizes, name, position, is_hidden)
-        # self.map_info
-        self.hover_text = "info\nfewfewfweff\n\n\nf"
+        self.map_info = {}
+        self.hover_text = "gosh im so tired\nwhy am i even doing this\ntrash\nnightmare\nhelp\nwhat is outside"
+        self.card_color = (120, 120, 120)
     
     def draw(self, surface: Surface):
+        draw.rect(surface, self.card_color, (*self.pos, *self.sizes))
+
         if self.hover_pos:
             surface.blit(render_hover_info(self.hover_text, self.hover_font), self.hover_pos)
 

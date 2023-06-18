@@ -14,8 +14,13 @@ class Lobby(Scene):
         self.form = Form(screen.get_size())
         self.form.border_radius = 0
         self.form.border_color = (0, 0, 0, 0)
+        margin = screen.get_width() / 70
         for i in range(5):
-            self.form.add_component(Slot("", -1, (500, 70), "us" + str(i + 1), position=[20, 20 + 80 * i]))
+            self.form.add_component(Slot(
+                "", -1,
+                (screen.get_width() / 2 - margin * 2, (screen.get_height() * 0.6 - margin * 2) / 5),
+                "us" + str(i + 1),
+                position=[margin, margin + ((screen.get_height() * 0.65 - margin * 2) / 5) * i]))
         self.players = 0
         
         self.net.add_listener(self.new_player, "lobby_join")
@@ -33,6 +38,35 @@ class Lobby(Scene):
         self.chat = Label("", (screen.get_width(), screen.get_height() * 0.35 - self.chat_edit.sizes[1]), "chat", [5, screen.get_height() * 0.65 + 10])
         self.chat.is_centered = False
         self.form.add_component(self.chat)
+
+        self.map = Map((screen.get_width() / 2 - margin * 2, screen.get_height() / 6), "map_card", [screen.get_width() / 2 + margin, margin])
+        self.form.add_component(self.map)
+
+        self.skip_button = Button(
+            "Skip the map\n0/3",
+            (screen.get_width() / 6, screen.get_height() / 6),
+            "skip",
+            [screen.get_width() * 5 / 6 - margin, screen.get_height() / 2 - margin * 2]
+        )
+        self.skip_button.border_radius = 0
+        self.skip_button.outline_color = (120, 120, 120)
+        self.skip_button.color = (120, 120, 120)
+        self.skip_button.font_color = (255, 255, 255)
+        self.skip_button.pressed_color = (150, 150, 150)
+        self.form.add_component(self.skip_button)
+
+        self.play_button = Button(
+            "Play the map\n0/3",
+            (screen.get_width() / 6, screen.get_height() / 6),
+            "skip",
+            [screen.get_width() / 2 + margin, screen.get_height() / 2 - margin * 2]
+        )
+        self.play_button.border_radius = 0
+        self.play_button.outline_color = (120, 120, 120)
+        self.play_button.color = (120, 120, 120)
+        self.play_button.font_color = (255, 255, 255)
+        self.play_button.pressed_color = (150, 150, 150)
+        self.form.add_component(self.play_button)
 
         self.net.add_listener(self.send_data, "chat_message")
         self.net.add_listener(self.send_data, "lobby_player_join")
